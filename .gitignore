@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.db
+.env
+.streamlit/
+dataset/raw/*.csv
+dataset/phishing.csv
+model/model.pkl
+model/feature_names.pkl

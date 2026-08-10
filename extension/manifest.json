@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "PhishBlockAI - Real-Time Protection",
+  "version": "1.0.0",
+  "description": "Detects phishing and malicious sites in real time.",
+  "permissions": ["activeTab", "storage", "tabs", "scripting"],
+  "host_permissions": ["http://127.0.0.1:8000/*", "<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html" }
+}
