@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 SUSPICIOUS_WORDS = ["verify", "confirm", "webscr", "ebayisapi",
                      "signin", "update-account", "security-alert"]
 
-_TRANCO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset", "raw", "tranco_top_100k.csv")
+_TRANCO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset", "raw", "tranco_top_30k.csv")
 _POPULAR_DOMAINS = set()
 try:
     with open(_TRANCO_PATH, encoding="utf-8") as f:
