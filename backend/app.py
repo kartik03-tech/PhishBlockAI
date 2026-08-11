@@ -1,7 +1,10 @@
+import sys, os
 from dotenv import load_dotenv
 load_dotenv()
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "model"))
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, "..", "model"))
+sys.path.append(BASE_DIR)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
