@@ -2,9 +2,11 @@ import re
 import os
 import tldextract
 from urllib.parse import urlparse
+
 SUSPICIOUS_WORDS = ["verify", "confirm", "webscr", "ebayisapi",
                      "signin", "update-account", "security-alert"]
-_TRANCO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset", "raw", "tranco_top_1m.csv")
+
+_TRANCO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset", "raw", "tranco_top_100k.csv")
 _POPULAR_DOMAINS = set()
 try:
     with open(_TRANCO_PATH, encoding="utf-8") as f:
@@ -16,7 +18,6 @@ except FileNotFoundError:
     pass
 
 def normalize_url(url: str) -> str:
-    """Strip trailing slash so 'example.com' and 'example.com/' score identically."""
     url = str(url).strip()
     if url.endswith("/") and not url.endswith("://"):
         url = url[:-1]
