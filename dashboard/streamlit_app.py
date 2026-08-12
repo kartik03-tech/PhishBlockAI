@@ -4,7 +4,7 @@ import requests
 import plotly.express as px
 from datetime import datetime
 
-API = "http://127.0.0.1:8000"
+API = "https://phishblockai.onrender.com"
 
 st.set_page_config(page_title="PhishBlockAI Dashboard", layout="wide", initial_sidebar_state="expanded")
 st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
@@ -42,7 +42,7 @@ try:
     stats = get_stats()
     history = get_history()
 except Exception:
-    st.error("⚠️ Cannot reach backend API. Make sure uvicorn is running on http://127.0.0.1:8000")
+    st.error("⚠️ Cannot reach backend API. Make sure uvicorn is running on https://phishblockai.onrender.com")
     st.stop()
 
 if not history.empty:
