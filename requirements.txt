@@ -9,4 +9,6 @@ streamlit
 plotly
 tldextract
 python-multipart
-requestspsycopg2-binary
+requests
+python-dotenv
+psycopg2-binary
