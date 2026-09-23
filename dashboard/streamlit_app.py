@@ -20,43 +20,52 @@ def get_history(limit=2000):
 def predict(url):
     return requests.post(f"{API}/predict", json={"url": url}).json()
 
+def scan_message(text):
+    return requests.post(f"{API}/scan-message", json={"text": text}).json()
+
+def scan_qr(file_bytes, filename):
+    files = {"file": (filename, file_bytes)}
+    return requests.post(f"{API}/scan-qr", files=files).json()
+
 def risk_color(score):
-    if score >= 80: return "🔴"
-    if score >= 50: return "🟠"
-    return "🟢"
+    if score >= 80: return "Danger/Fraud"
+    if score >= 50: return "Suspicious"
+    return "Safe"
+
+def verdict_color(pred):
+    mapping = {"phishing": "🔴", "suspicious": "🟠", "safe": "🟢"}
+    return mapping.get(pred, "⚪")
 
 with st.sidebar:
-    st.markdown("### 🛡️ PhishBlockAI")
+    st.markdown("###  PhishBlockAI")
     st.caption("Real-Time Protection")
     st.markdown("---")
     page = st.radio(
         "Navigate",
-        ["🏠 Dashboard", "⚠️ Threats", "🔍 URL Scanner", "🕘 Browse History",
-         "🔔 Alerts", "📊 Statistics", "⚙️ Settings", "ℹ️ About"],
+        [" Dashboard", " Threats", " URL Scanner", " QR Scanner", " Message Scanner",
+         " Browse History", " Alerts", " Statistics", " Settings"],
         label_visibility="collapsed",
     )
-    st.markdown("---")
-    st.info("Our AI model analyzes URLs in real-time and protects you from phishing, malware & online scams.")
 
 try:
     stats = get_stats()
     history = get_history()
 except Exception:
-    st.error("⚠️ Cannot reach backend API. Make sure uvicorn is running on https://phishblockai.onrender.com")
+    st.error(" Cannot reach backend API.")
     st.stop()
 
 if not history.empty:
     history["detected_at"] = pd.to_datetime(history["detected_at"])
 
-if page == "🏠 Dashboard":
+if page == " Dashboard":
     st.title("PhishBlockAI — Real-Time Threat Intelligence Dashboard")
     st.caption("Monitor, Detect & Analyze Browser Threats in Real-Time")
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("🌐 Total URLs Scanned", stats["total_scanned"])
-    c2.metric("⚠️ Threats Detected", stats["threats_detected"])
-    c3.metric("✅ Safe URLs", stats["safe"])
-    c4.metric("📈 Avg Risk Score", f"{stats['avg_risk_score']}/100")
+    c1.metric(" Total URLs Scanned", stats["total_scanned"])
+    c2.metric(" Threats Detected", stats["threats_detected"])
+    c3.metric(" Safe URLs", stats["safe"])
+    c4.metric("Avg Risk Score", f"{stats['avg_risk_score']}/100")
 
     if not history.empty:
         col1, col2 = st.columns([1.6, 1])
@@ -74,7 +83,7 @@ if page == "🏠 Dashboard":
             st.subheader("Threat Distribution")
             dist = history["prediction"].value_counts().reset_index()
             dist.columns = ["prediction", "count"]
-            colors = {"phishing": "#ef4444", "suspicious": "#f59e0b", "safe": "#22c55e"}
+            colors = {"phishing":"#ef4444", "suspicious": "#f59e0b", "safe": "#22c55e"}
             fig = px.pie(dist, names="prediction", values="count", hole=0.55,
                          color="prediction", color_discrete_map=colors)
             st.plotly_chart(fig, use_container_width=True)
@@ -84,7 +93,7 @@ if page == "🏠 Dashboard":
             st.subheader("Recent Threats Detected")
             recent = history[history["prediction"] != "safe"].sort_values("detected_at", ascending=False).head(8)
             for _, row in recent.iterrows():
-                badge = "🔴 Blocked" if row["risk_score"] >= 80 else "🟠 Warned"
+                badge = " Blocked" if row["risk_score"] >= 80 else " Warned"
                 st.markdown(f"{risk_color(row['risk_score'])} **{row['url'][:50]}** — "
                             f"{row['prediction']} — Risk: **{row['risk_score']}** — {badge}")
         with col4:
@@ -94,10 +103,10 @@ if page == "🏠 Dashboard":
             for _, row in risky.iterrows():
                 st.progress(row["risk_score"] / 100, text=f"{row['url'][:30]} — {row['risk_score']}")
     else:
-        st.info("No scans yet — browse with the extension active to populate data.")
+        st.info("No scans yet.")
 
-elif page == "⚠️ Threats":
-    st.title("⚠️ All Detected Threats")
+elif page == " Threats":
+    st.title(" All Detected Threats")
     if history.empty:
         st.info("No data yet.")
     else:
@@ -111,9 +120,10 @@ elif page == "⚠️ Threats":
             use_container_width=True, height=500
         )
 
-elif page == "🔍 URL Scanner":
-    st.title("🔍 URL Scanner")
+elif page == " URL Scanner":
+    st.title(" URL Scanner")
     st.caption("Manually check any URL for phishing or malware risk")
+
     url_input = st.text_input("Enter a URL to scan", placeholder="https://example.com")
     if st.button("Scan URL", type="primary"):
         if url_input.strip():
@@ -121,12 +131,13 @@ elif page == "🔍 URL Scanner":
                 result = predict(url_input.strip())
             get_stats.clear()
             get_history.clear()
+
             score = result["risk_score"]
             pred = result["prediction"]
-            color = {"phishing": "🔴", "suspicious": "🟠", "safe": "🟢"}[pred]
-            st.markdown(f"## {color} {pred.upper()} — Risk Score: {score}/100")
+            st.markdown(f"## {verdict_color(pred)} {pred.upper()} — Risk Score: {score}/100")
             st.progress(score / 100)
             st.write(f"**Confidence:** {result['confidence']*100:.0f}%")
+            st.write(f"**Source:** {result.get('source', 'model')}")
             if result["reasons"]:
                 st.write("**Reasons flagged:**")
                 for r in result["reasons"]:
@@ -136,8 +147,72 @@ elif page == "🔍 URL Scanner":
         else:
             st.warning("Please enter a URL first.")
 
-elif page == "🕘 Browse History":
-    st.title("🕘 Browse History")
+elif page == " QR Scanner":
+    st.title(" QR Code Scanner")
+    st.caption("Upload an image containing a QR code — we'll decode it and check if the link is safe")
+
+    uploaded_file = st.file_uploader("Upload QR code image", type=["png", "jpg", "jpeg"])
+    if uploaded_file is not None:
+        st.image(uploaded_file, caption="Uploaded QR code", width=200)
+        if st.button("Scan QR Code", type="primary"):
+            with st.spinner("Decoding and analyzing..."):
+                file_bytes = uploaded_file.getvalue()
+                result = scan_qr(file_bytes, uploaded_file.name)
+            get_stats.clear()
+            get_history.clear()
+
+            if "error" in result:
+                st.error(f" {result['error']}")
+            else:
+                st.success(f"**Decoded content:** {result['decoded_content']}")
+                score = result["risk_score"]
+                pred = result["prediction"]
+                st.markdown(f"## {verdict_color(pred)} {pred.upper()} — Risk Score: {score}/100")
+                st.progress(score / 100)
+                st.write(f"**Confidence:** {result['confidence']*100:.0f}%")
+                if result["reasons"]:
+                    st.write("**Reasons flagged:**")
+                    for r in result["reasons"]:
+                        st.write(f"- {r}")
+                else:
+                    st.write("No specific red flags detected.")
+    else:
+        st.info("Upload a QR code image (PNG or JPG) to scan it for phishing links.")
+
+elif page == " Message Scanner":
+    st.title(" Message / Email Scanner")
+    st.caption("Paste a suspicious email or text message — we'll extract any links and check for urgency-based scam language")
+
+    text_input = st.text_area("Paste message text here", height=180,
+                                placeholder="e.g. URGENT: Your account will be suspended! Verify immediately: http://...")
+    if st.button("Scan Message", type="primary"):
+        if text_input.strip():
+            with st.spinner("Analyzing message..."):
+                result = scan_message(text_input.strip())
+            get_stats.clear()
+            get_history.clear()
+
+            overall = result["overall_assessment"]
+            st.markdown(f"## {verdict_color(overall)} Overall Assessment: {overall.upper()}")
+
+            if result["url_count"] == 0:
+                st.info("No URLs were found in this message.")
+            else:
+                st.write(f"**{result['url_count']} URL(s) found:**")
+                for u in result["urls_found"]:
+                    st.markdown(f"- {verdict_color(u['prediction'])} `{u['url']}` — "
+                                f"{u['prediction']} (risk: {u['risk_score']}/100)")
+
+            if result["urgency_phrases_detected"]:
+                st.warning("**Urgency/social-engineering phrases detected:** " +
+                           ", ".join(result["urgency_phrases_detected"]))
+            else:
+                st.write("No urgency-based scam language detected.")
+        else:
+            st.warning("Please paste a message first.")
+
+elif page == " Browse History":
+    st.title(" Browse History")
     if history.empty:
         st.info("No scans yet.")
     else:
@@ -148,27 +223,27 @@ elif page == "🕘 Browse History":
             display = display[display["url"].str.contains(search, case=False, na=False)]
         st.dataframe(display[["url", "prediction", "risk_score", "detected_at"]], use_container_width=True, height=550)
 
-elif page == "🔔 Alerts":
-    st.title("🔔 High-Risk Alerts")
+elif page == " Alerts":
+    st.title(" High-Risk Alerts")
     st.caption("URLs scoring 80+ risk — treated as confirmed phishing/malware")
     if history.empty:
         st.info("No alerts yet.")
     else:
         alerts = history[history["risk_score"] >= 80].sort_values("detected_at", ascending=False)
         if alerts.empty:
-            st.success("No high-risk alerts. All clear! ✅")
+            st.success("No high-risk alerts. All clear! ")
         else:
             for _, row in alerts.iterrows():
                 with st.container(border=True):
-                    st.markdown(f"### 🔴 {row['prediction'].upper()} detected")
+                    st.markdown(f"###  {row['prediction'].upper()} detected")
                     st.write(f"**URL:** {row['url']}")
                     st.write(f"**Risk Score:** {row['risk_score']}/100")
                     st.write(f"**Detected:** {row['detected_at']}")
                     if row["reasons"]:
                         st.write(f"**Reasons:** {row['reasons']}")
 
-elif page == "📊 Statistics":
-    st.title("📊 Statistics")
+elif page == " Statistics":
+    st.title(" Statistics")
     if history.empty:
         st.info("No data yet.")
     else:
@@ -188,8 +263,8 @@ elif page == "📊 Statistics":
         breakdown["Percentage"] = (breakdown["Count"] / breakdown["Count"].sum() * 100).round(1)
         st.dataframe(breakdown, use_container_width=True)
 
-elif page == "⚙️ Settings":
-    st.title("⚙️ Settings")
+elif page == " Settings":
+    st.title(" Settings")
     st.caption("Configure detection thresholds (display only for now)")
     st.slider("Suspicious threshold", 0, 100, 50)
     st.slider("Phishing threshold", 0, 100, 80)
@@ -197,23 +272,8 @@ elif page == "⚙️ Settings":
     st.toggle("Auto-block high-risk sites", value=True)
     st.button("Save Settings")
 
-elif page == "ℹ️ About":
-    st.title("ℹ️ About PhishBlockAI")
-    st.markdown("""
-    **PhishBlockAI — Real-Time Browser Threat Intelligence**
-
-    An end-to-end machine learning system for detecting phishing and malicious URLs in real time.
-
-    **Architecture:** RandomForestClassifier (900K+ URLs) + rule-based trust override, FastAPI + SQLite backend,
-    Manifest V3 Chrome extension with automatic on-page warnings, Streamlit dashboard.
-
-    **Model performance:** ROC-AUC ≈ 0.97
-
-    **Version:** 1.0.0
-    """)
-
 st.markdown("---")
 fcol1, fcol2, fcol3 = st.columns(3)
-fcol1.caption("🛡️ Real-Time Protection: **ON**")
-fcol2.caption("🗄️ Database: **Connected**")
-fcol3.caption(f"🕐 Last Updated: {datetime.now().strftime('%I:%M:%S %p')}")
+fcol1.caption(" Real-Time Protection: **ON**")
+fcol2.caption(" Database: **Connected**")
+fcol3.caption(f"Last Updated: {datetime.now().strftime('%I:%M:%S %p')}")
