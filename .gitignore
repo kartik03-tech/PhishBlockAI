@@ -6,3 +6,5 @@ __pycache__/
 .streamlit/
 dataset/raw/*.csv
 dataset/phishing.csv
+phishblockai-extension.zip
+testing stuff/
