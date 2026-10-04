@@ -7,7 +7,94 @@ from datetime import datetime
 API = "https://phishblockai.onrender.com"
 
 st.set_page_config(page_title="PhishBlockAI Dashboard", layout="wide", initial_sidebar_state="expanded")
-st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+if "entered" not in st.session_state:
+    st.session_state.entered = False
+
+if not st.session_state.entered:
+    st.markdown("""
+    <style>
+      [data-testid="stSidebar"], header, footer { display: none; }
+      .block-container { padding: 0 !important; max-width: 100% !important; }
+
+      .landing-wrap {
+        height: 100vh; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: radial-gradient(circle at 30% 20%, #1e3a8a 0%, #0f172a 55%, #05070d 100%);
+        text-align: center; position: relative; overflow: hidden;
+      }
+
+      .orb {
+        position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.35;
+        animation: float 8s ease-in-out infinite;
+      }
+      .orb1 { width: 300px; height: 300px; background: #6366f1; top: 10%; left: 10%; }
+      .orb2 { width: 220px; height: 220px; background: #3b82f6; bottom: 15%; right: 12%; animation-delay: -3s; }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-30px); }
+      }
+
+      .shield {
+        width: 110px; height: 110px; margin-bottom: 24px;
+        animation: pulse 2.2s ease-in-out infinite;
+        filter: drop-shadow(0 0 25px rgba(99,102,241,0.6));
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+      }
+
+      .landing-title {
+        font-size: 48px; font-weight: 800; color: white; margin: 0;
+        opacity: 0; animation: fadeUp 1s ease forwards; animation-delay: 0.3s;
+      }
+      .landing-sub {
+        font-size: 17px; color: #94a3b8; margin-top: 10px; max-width: 480px;
+        opacity: 0; animation: fadeUp 1s ease forwards; animation-delay: 0.6s;
+      }
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .badge-row {
+        display: flex; gap: 10px; margin-top: 28px;
+        opacity: 0; animation: fadeUp 1s ease forwards; animation-delay: 0.9s;
+      }
+      .badge {
+        font-size: 12px; color: #c7d2fe; background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.4); padding: 6px 14px; border-radius: 20px;
+      }
+    </style>
+
+    <div class="landing-wrap">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+      <svg class="shield" viewBox="0 0 100 100">
+        <polygon points="50,8 85,22 85,48 50,92 15,48 15,22" fill="white"/>
+        <polyline points="32,50 45,63 70,30" fill="none" stroke="#3b64d6" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1 class="landing-title">PhishBlockAI</h1>
+      <p class="landing-sub">Real-time phishing and malicious URL detection,<br>powered by machine learning and live threat intelligence.</p>
+      <div class="badge-row">
+        <span class="badge">URL Scanner</span>
+        <span class="badge">QR Scanner</span>
+        <span class="badge">Message Scanner</span>
+        <span class="badge">Live Protection</span>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    _, c, _ = st.columns([2, 1, 2])
+    with c:
+        if st.button("Enter Dashboard", type="primary", use_container_width=True):
+            st.session_state.entered = True
+            st.rerun()
+    st.stop()
+
+st.markdown("<div style=\'height: 20px;\'></div>", unsafe_allow_html=True)
 
 @st.cache_data(ttl=5)
 def get_stats():
@@ -271,9 +358,3 @@ elif page == " Settings":
     st.toggle("Real-Time Protection", value=True)
     st.toggle("Auto-block high-risk sites", value=True)
     st.button("Save Settings")
-
-st.markdown("---")
-fcol1, fcol2, fcol3 = st.columns(3)
-fcol1.caption(" Real-Time Protection: **ON**")
-fcol2.caption(" Database: **Connected**")
-fcol3.caption(f"Last Updated: {datetime.now().strftime('%I:%M:%S %p')}")
